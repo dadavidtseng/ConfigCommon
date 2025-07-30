@@ -2,7 +2,7 @@
 .vs/
 .idea/
 .qudo/
-.vsconfig/
+.vsconfig
 
 # Compiled Object files
 *.slo
