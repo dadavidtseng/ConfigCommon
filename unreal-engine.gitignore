@@ -3,6 +3,7 @@
 .idea/
 .qudo/
 .vsconfig
+*.sln.DotSettings.user
 
 # Compiled Object files
 *.slo
