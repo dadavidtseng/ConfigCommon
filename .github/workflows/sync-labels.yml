@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       target_repos:
-        description: 'DaevaLab'
+        description: 'DaemonEngine'
         required: false
         type: string
       dry_run:
@@ -44,12 +44,9 @@ jobs:
         run: |
           # 預設的遊戲開發專案倉庫列表（請修改為你的實際倉庫）
           DEFAULT_REPOS=(
-            "your-username/game-engine"
-            "your-username/game-framework"
-            "your-username/game-project-a"
-            "your-username/game-project-b"
-            "your-org/main-game"
-            "your-org/game-tools"
+            "dadavidtseng/DaemonEngine"
+            "dadavidtseng/Starship"
+            "dadavidtseng/ChessSimulator"
           )
           
           if [ -n "${{ github.event.inputs.target_repos }}" ]; then
