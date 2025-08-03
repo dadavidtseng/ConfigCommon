@@ -1,0 +1,136 @@
+# .github/workflows/setup-labels.yml (放在每個目標倉庫中)
+name: 設定專案 Labels
+
+on:
+  workflow_dispatch:  # 手動觸發
+
+  # 可選：倉庫建立時自動執行
+  # create:
+
+jobs:
+  setup-labels:
+    runs-on: ubuntu-latest
+    name: 設定標準 Labels
+
+    steps:
+      - name: 設定 Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 標準 Labels 定義
+            const standardLabels = [
+              // 區域分類
+              { name: "area: engine", color: "1f77b4", description: "Issues or PRs related to core engine systems and architecture" },
+              { name: "area: framework", color: "ff7f0e", description: "Issues or PRs related to application framework and base infrastructure" },
+              { name: "area: gameplay", color: "2ca02c", description: "Issues or PRs related to gameplay" },
+              { name: "area: subsystem", color: "d62728", description: "Issues or PRs related to modular subsystems and their integration" },
+              { name: "area: third-party", color: "9467bd", description: "Issues or PRs related to third-party library integration and dependencies" },
+            
+              // 錯誤分類
+              { name: "bug: critical", color: "b60205", description: "Critical bugs that prevent the game from running or cause crashes" },
+              { name: "bug: memory", color: "d73a4a", description: "Bugs related to memory leaks, allocation issues, or memory management" },
+              { name: "bug: performance", color: "e99695", description: "Bugs related to performance issues, frame rate drops, or optimization" },
+              { name: "bug: rendering", color: "f85149", description: "Bugs related to visual rendering" },
+              { name: "bug: window-management", color: "ff6b6b", description: "Bugs related to window creation, positioning, or multi-window handling" },
+            
+              // 其他
+              { name: "build-system", color: "8b4513", description: "Issues related to build configuration, compilation, or deployment processes" },
+              { name: "documentation", color: "0075ca", description: "Tasks related to documentation, comments, or knowledge sharing" },
+            
+              // 功能分類
+              { name: "feature: audio", color: "ff69b4", description: "Features related to audio system, sound effects, and music integration" },
+              { name: "feature: gameplay", color: "32cd32", description: "Features related to core game mechanics, player interactions, and game logic" },
+              { name: "feature: input", color: "ffa500", description: "Features related to input handling, controls, and user interaction systems" },
+              { name: "feature: rendering", color: "00ced1", description: "Features related to graphics rendering, visual effects, and display systems" },
+              { name: "feature: ui", color: "9370db", description: "Features related to user interface elements, menus, and HUD components" },
+              { name: "feature: window-system", color: "20b2aa", description: "Features related to multi-window management, window creation, and window lifecycle" },
+            
+              // 平台
+              { name: "platform: windows", color: "0078d4", description: "Issues or features specific to Windows platform implementation" },
+            
+              // 優先級
+              { name: "priority: urgent", color: "8b0000", description: "Urgent issues that need immediate attention and resolution" },
+              { name: "priority: high", color: "dc143c", description: "High priority tasks that should be addressed soon" },
+              { name: "priority: medium", color: "ffa500", description: "Medium priority tasks for regular development cycle" },
+              { name: "priority: low", color: "90ee90", description: "Low priority tasks that can be addressed when time permits" },
+            
+              // 狀態
+              { name: "status: planning", color: "fbca04", description: "Task is in planning phase, requirements gathering, or design stage" },
+              { name: "status: in-progress", color: "0052cc", description: "Task is currently being worked on by a developer" },
+              { name: "status: review", color: "5319e7", description: "Task is complete and awaiting code review or approval" },
+              { name: "status: testing", color: "f9d0c4", description: "Task is complete and ready for testing or quality assurance" },
+              { name: "status: blocked", color: "e99695", description: "Task is blocked and waiting for dependencies or external factors" },
+              { name: "status: done", color: "0e8a16", description: "Task has been completed successfully" },
+            
+              // 工具
+              { name: "tools", color: "6f42c1", description: "Tasks related to development tools, utilities, or workflow improvements" }
+            ];
+
+            console.log('🚀 開始設定標準 Labels...');
+            
+            // 獲取現有 labels
+            const { data: existingLabels } = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const existingLabelNames = existingLabels.map(label => label.name);
+            
+            let created = 0;
+            let updated = 0;
+            let errors = 0;
+            
+            // 建立或更新每個標準 label
+            for (const label of standardLabels) {
+              try {
+                if (existingLabelNames.includes(label.name)) {
+                  // 更新現有 label
+                  const existingLabel = existingLabels.find(l => l.name === label.name);
+                  if (existingLabel.color !== label.color || existingLabel.description !== label.description) {
+                    await github.rest.issues.updateLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      name: label.name,
+                      color: label.color,
+                      description: label.description
+                    });
+                    console.log(`✏️  更新 label: ${label.name}`);
+                    updated++;
+                  } else {
+                    console.log(`✅ Label 已是最新: ${label.name}`);
+                  }
+                } else {
+                  // 建立新 label
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description
+                  });
+                  console.log(`➕ 建立 label: ${label.name}`);
+                  created++;
+                }
+              } catch (error) {
+                console.error(`❌ 處理 label "${label.name}" 時發生錯誤:`, error.message);
+                errors++;
+              }
+            }
+            
+            console.log('\n📊 Labels 設定結果:');
+            console.log(`  ➕ 新建立: ${created} 個`);
+            console.log(`  ✏️  已更新: ${updated} 個`);
+            console.log(`  ❌ 錯誤: ${errors} 個`);
+            console.log(`  📋 總計: ${standardLabels.length} 個標準 labels`);
+            
+            // 產生摘要報告
+            core.summary
+              .addHeading('🏷️ Labels 設定結果')
+              .addTable([
+                [{data: '操作', header: true}, {data: '數量', header: true}],
+                ['新建立', created.toString()],
+                ['已更新', updated.toString()],
+                ['錯誤', errors.toString()],
+                ['總計', standardLabels.length.toString()]
+              ])
+              .write();
