@@ -1,0 +1,192 @@
+# .github/workflows/sync-labels.yml
+name: 同步 Labels 到遊戲開發專案
+
+on:
+  # 當 labels.yml 被修改時自動執行
+  push:
+    paths:
+      - '.github/labels.yml'
+    branches:
+      - main
+
+  # 手動觸發
+  workflow_dispatch:
+    inputs:
+      target_repos:
+        description: 'DaevaLab'
+        required: false
+        type: string
+      dry_run:
+        description: '僅預覽變更，不實際執行'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    name: 同步 Labels 到遊戲開發專案
+
+    steps:
+      - name: 檢出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安裝 github-label-sync 工具
+        run: npm install -g github-label-sync
+
+      - name: 準備目標倉庫列表
+        id: prepare-repos
+        run: |
+          # 預設的遊戲開發專案倉庫列表（請修改為你的實際倉庫）
+          DEFAULT_REPOS=(
+            "your-username/game-engine"
+            "your-username/game-framework"
+            "your-username/game-project-a"
+            "your-username/game-project-b"
+            "your-org/main-game"
+            "your-org/game-tools"
+          )
+          
+          if [ -n "${{ github.event.inputs.target_repos }}" ]; then
+            # 使用手動輸入的倉庫列表
+            IFS=',' read -ra REPOS <<< "${{ github.event.inputs.target_repos }}"
+          else
+            # 使用預設列表
+            REPOS=("${DEFAULT_REPOS[@]}")
+          fi
+          
+          # 輸出倉庫列表供後續使用
+          printf '%s\n' "${REPOS[@]}" > repos.txt
+          echo "📋 準備同步到以下倉庫："
+          cat repos.txt | sed 's/^/  - /'
+
+      - name: 驗證 Labels 設定檔
+        run: |
+          echo "🔍 驗證 labels.yml 格式..."
+          # 檢查 YAML 格式是否正確
+          python3 -c "
+          import yaml
+          import sys
+          try:
+              with open('.github/labels.yml', 'r', encoding='utf-8') as f:
+                  labels = yaml.safe_load(f)
+              print(f'✅ 發現 {len(labels)} 個 labels 設定')
+          
+              # 檢查必要欄位
+              for i, label in enumerate(labels):
+                  if 'name' not in label:
+                      print(f'❌ Label {i+1} 缺少 name 欄位')
+                      sys.exit(1)
+                  if 'color' not in label:
+                      print(f'❌ Label {i+1} ({label[\"name\"]}) 缺少 color 欄位')
+                      sys.exit(1)
+          
+              print('✅ Labels 設定檔格式正確')
+          except Exception as e:
+              print(f'❌ Labels 設定檔格式錯誤: {e}')
+              sys.exit(1)
+          "
+
+      - name: 預覽變更（Dry Run）
+        if: github.event.inputs.dry_run == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 預覽模式：顯示將要進行的變更"
+          echo "============================================="
+          
+          while IFS= read -r repo; do
+            repo=$(echo $repo | xargs)
+            echo ""
+            echo "📦 倉庫: $repo"
+            echo "---"
+          
+            # 使用 github-label-sync 的 dry-run 模式
+            github-label-sync --access-token "$GITHUB_TOKEN" --labels .github/labels.yml --dry-run $repo || true
+          
+          done < repos.txt
+          
+          echo ""
+          echo "ℹ️  這是預覽模式，未進行實際變更"
+
+      - name: 執行 Labels 同步
+        if: github.event.inputs.dry_run != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 開始同步 labels..."
+          FAILED_REPOS=()
+          SUCCESS_COUNT=0
+          
+          while IFS= read -r repo; do
+            repo=$(echo $repo | xargs)
+            echo ""
+            echo "🔄 正在同步到: $repo"
+            echo "---"
+          
+            # 執行同步
+            if github-label-sync --access-token "$GITHUB_TOKEN" --labels .github/labels.yml $repo; then
+              echo "✅ 成功同步到 $repo"
+              ((SUCCESS_COUNT++))
+            else
+              echo "❌ 同步失敗: $repo"
+              FAILED_REPOS+=("$repo")
+            fi
+          
+            # 添加延遲避免 API 限制
+            sleep 2
+          
+          done < repos.txt
+          
+          echo ""
+          echo "📊 同步結果摘要："
+          echo "  成功: $SUCCESS_COUNT 個倉庫"
+          echo "  失敗: ${#FAILED_REPOS[@]} 個倉庫"
+          
+          if [ ${#FAILED_REPOS[@]} -gt 0 ]; then
+            echo ""
+            echo "❌ 失敗的倉庫："
+            printf '  - %s\n' "${FAILED_REPOS[@]}"
+            exit 1
+          fi
+
+      - name: 產生同步報告
+        if: always()
+        run: |
+          echo "# 🎮 遊戲開發專案 Labels 同步報告" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**執行時間：** $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**觸發方式：** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "**模式：** 🔍 預覽模式（未實際變更）" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**模式：** 🚀 實際同步" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 目標倉庫" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          while IFS= read -r repo; do
+            repo=$(echo $repo | xargs)
+            echo "- [$repo](https://github.com/$repo/labels)" >> $GITHUB_STEP_SUMMARY
+          done < repos.txt
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🏷️ Labels 統計" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 統計各類型 labels 數量
+          echo "- **總計：** $(grep -c '^- name:' .github/labels.yml) 個 labels" >> $GITHUB_STEP_SUMMARY
+          echo "- **區域分類 (area)：** $(grep -c '^- name: "area:' .github/labels.yml) 個" >> $GITHUB_STEP_SUMMARY
+          echo "- **錯誤分類 (bug)：** $(grep -c '^- name: "bug:' .github/labels.yml) 個" >> $GITHUB_STEP_SUMMARY
+          echo "- **功能分類 (feature)：** $(grep -c '^- name: "feature:' .github/labels.yml) 個" >> $GITHUB_STEP_SUMMARY
+          echo "- **優先級 (priority)：** $(grep -c '^- name: "priority:' .github/labels.yml) 個" >> $GITHUB_STEP_SUMMARY
+          echo "- **狀態 (status)：** $(grep -c '^- name: "status:' .github/labels.yml) 個" >> $GITHUB_STEP_SUMMARY
+          echo "- **其他：** $(grep -E '^- name: "(build-system|documentation|platform|tools)"' .github/labels.yml | wc -l) 個" >> $GITHUB_STEP_SUMMARY
