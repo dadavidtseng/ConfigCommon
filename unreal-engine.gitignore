@@ -4,6 +4,7 @@
 .qudo/
 .vsconfig
 *.sln.DotSettings.user
+*.user
 
 # Compiled Object files
 *.slo
