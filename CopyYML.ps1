@@ -16,7 +16,7 @@ function Test-GitInstalled {
         git --version | Out-Null
         return $true
     } catch {
-        Write-Error "Git 未安裝或無法找到。請確認 Git 已正確安裝並加入到 PATH 環境變數中。"
+        Write-Error "Git is not installed or cannot be found. Please ensure Git is properly installed and added to the PATH environment variable."
         return $false
     }
 }
@@ -28,12 +28,12 @@ function Copy-ConfigToRepository {
         [string]$WorkingDir
     )
 
-    Write-Host "正在處理倉儲：$TargetRepo" -ForegroundColor Yellow
+    Write-Host "Processing repository: $TargetRepo" -ForegroundColor Yellow
     $targetPath = Join-Path $WorkingDir $TargetRepo.Split('/')[1]
 
     try {
         if (Test-Path $targetPath) {
-            Write-Host "  目錄已存在，正在更新倉儲..." -ForegroundColor Green
+            Write-Host "  Directory exists, updating repository..." -ForegroundColor Green
             Push-Location $targetPath
             git pull origin main 2>$null
             if ($LASTEXITCODE -ne 0) {
@@ -41,65 +41,66 @@ function Copy-ConfigToRepository {
             }
             Pop-Location
         } else {
-            Write-Host "  正在複製倉儲..." -ForegroundColor Green
+            Write-Host "  Cloning repository..." -ForegroundColor Green
             git clone "https://github.com/$TargetRepo.git" $targetPath
             if ($LASTEXITCODE -ne 0) {
-                throw "無法複製倉儲 $TargetRepo"
+                throw "Unable to clone repository $TargetRepo"
             }
         }
 
-        # 確保 .github/workflows 目錄存在
+        # Ensure .github/workflows directory exists
         $workflowsDir = Join-Path $targetPath ".github\workflows"
         if (-not (Test-Path $workflowsDir)) {
             New-Item -ItemType Directory -Path $workflowsDir -Force | Out-Null
-            Write-Host "  建立 .github\workflows 目錄" -ForegroundColor Cyan
+            Write-Host "  Created .github\workflows directory" -ForegroundColor Cyan
         }
 
         $targetConfigPath = Join-Path $workflowsDir $ConfigFile
 
         if (Test-Path $SourcePath) {
             Copy-Item $SourcePath $targetConfigPath -Force
-            Write-Host "  已複製 $ConfigFile 到 $TargetRepo\.github\workflows\" -ForegroundColor Green
+            Write-Host "  Copied $ConfigFile to $TargetRepo\.github\workflows\" -ForegroundColor Green
 
             Push-Location $targetPath
             $gitStatus = git status --porcelain
 
             if ($gitStatus) {
-                Write-Host "  發現檔案變更，正在提交..." -ForegroundColor Cyan
+                Write-Host "  File changes detected, committing..." -ForegroundColor Cyan
                 git add ".github/workflows/$ConfigFile"
                 git commit -m "update: clone $ConfigFile from $SourceRepo"
 
-                $pushChoice = Read-Host "  是否要推送變更到遠端倉儲？(y/N)"
+                $pushChoice = Read-Host "  Push changes to remote repository? (y/N)"
                 if ($pushChoice -match '^[Yy]') {
                     git push
                     if ($LASTEXITCODE -eq 0) {
-                        Write-Host "  變更已成功推送" -ForegroundColor Green
+                        Write-Host "  Changes successfully pushed" -ForegroundColor Green
                     } else {
-                        Write-Warning "  推送失敗，請手動檢查"
+                        Write-Warning "  Push failed, please check manually"
                     }
                 } else {
-                    Write-Host "  變更已提交但未推送到遠端" -ForegroundColor Yellow
+                    Write-Host "  Changes committed but not pushed to remote" -ForegroundColor Yellow
                 }
             } else {
-                Write-Host "  檔案內容相同，無需更新" -ForegroundColor Gray
+                Write-Host "  File content is identical, no update needed" -ForegroundColor Gray
             }
             Pop-Location
         } else {
-            Write-Error "  找不到來源檔案：$SourcePath"
+            Write-Error "  Source file not found: $SourcePath"
         }
 
-        Write-Host "  完成處理 $TargetRepo" -ForegroundColor Green
+        Write-Host "  Finished processing $TargetRepo" -ForegroundColor Green
         Write-Host ""
 
     } catch {
-        Write-Error "  處理 $TargetRepo 時發生錯誤：$($_.Exception.Message)"
+        $errorMessage = $_.Exception.Message
+        Write-Error "  Error occurred while processing $TargetRepo`: $errorMessage"
         if (Get-Location | Where-Object { $_.Path -eq $targetPath }) {
             Pop-Location
         }
     }
 }
 
-# 設定工作目錄
+# Set working directory
 if ([string]::IsNullOrEmpty($WorkingDirectory)) {
     $tempDir = Join-Path $env:TEMP "sync-config-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     $WorkingDirectory = $tempDir
@@ -108,14 +109,14 @@ if ([string]::IsNullOrEmpty($WorkingDirectory)) {
     $isTemporary = $false
 }
 
-Write-Host "=== 設定檔案同步工具 ===" -ForegroundColor Cyan
-Write-Host "來源倉儲：$SourceRepo" -ForegroundColor White
-Write-Host "設定檔案：$ConfigFile" -ForegroundColor White
-Write-Host "目標倉儲：$($TargetRepositories -join ', ')" -ForegroundColor White
+Write-Host "=== Configuration File Sync Tool ===" -ForegroundColor Cyan
+Write-Host "Source Repository: $SourceRepo" -ForegroundColor White
+Write-Host "Configuration File: $ConfigFile" -ForegroundColor White
+Write-Host "Target Repositories: $($TargetRepositories -join ', ')" -ForegroundColor White
 if ($isTemporary) {
-    Write-Host "使用臨時目錄：$WorkingDirectory" -ForegroundColor Gray
+    Write-Host "Using temporary directory: $WorkingDirectory" -ForegroundColor Gray
 } else {
-    Write-Host "工作目錄：$WorkingDirectory" -ForegroundColor White
+    Write-Host "Working Directory: $WorkingDirectory" -ForegroundColor White
 }
 Write-Host ""
 
@@ -123,7 +124,7 @@ if (-not (Test-GitInstalled)) {
     exit 1
 }
 
-# 建立工作目錄
+# Create working directory
 if (-not (Test-Path $WorkingDirectory)) {
     New-Item -ItemType Directory -Path $WorkingDirectory -Force | Out-Null
 }
@@ -134,10 +135,10 @@ try {
     $sourceRepoName = $SourceRepo.Split('/')[1]
     $sourceRepoPath = Join-Path $WorkingDirectory $sourceRepoName
 
-    Write-Host "正在準備來源倉儲..." -ForegroundColor Yellow
+    Write-Host "Preparing source repository..." -ForegroundColor Yellow
 
     if (Test-Path $sourceRepoPath) {
-        Write-Host "來源倉儲已存在，正在更新..." -ForegroundColor Green
+        Write-Host "Source repository exists, updating..." -ForegroundColor Green
         Push-Location $sourceRepoPath
         git pull origin main 2>$null
         if ($LASTEXITCODE -ne 0) {
@@ -145,40 +146,40 @@ try {
         }
         Pop-Location
     } else {
-        Write-Host "正在複製來源倉儲..." -ForegroundColor Green
+        Write-Host "Cloning source repository..." -ForegroundColor Green
         git clone "https://github.com/$SourceRepo.git" $sourceRepoPath
         if ($LASTEXITCODE -ne 0) {
-            throw "無法複製來源倉儲 $SourceRepo"
+            throw "Unable to clone source repository $SourceRepo"
         }
     }
 
     $sourceConfigPath = Join-Path $sourceRepoPath $ConfigFile
 
     if (-not (Test-Path $sourceConfigPath)) {
-        Write-Error "在來源倉儲中找不到 $ConfigFile 檔案"
+        Write-Error "$ConfigFile file not found in source repository"
         exit 1
     }
 
-    Write-Host "來源倉儲準備完成" -ForegroundColor Green
+    Write-Host "Source repository preparation complete" -ForegroundColor Green
     Write-Host ""
 
     foreach ($repo in $TargetRepositories) {
         Copy-ConfigToRepository -TargetRepo $repo -SourcePath $sourceConfigPath -WorkingDir $WorkingDirectory
     }
 
-    Write-Host "=== 同步作業完成 ===" -ForegroundColor Cyan
+    Write-Host "=== Sync Operation Complete ===" -ForegroundColor Cyan
 
-    # 清理臨時檔案
+    # Clean up temporary files
     if ($isTemporary -and -not $KeepTempFiles) {
         Write-Host ""
-        Write-Host "正在清理臨時檔案..." -ForegroundColor Gray
+        Write-Host "Cleaning up temporary files..." -ForegroundColor Gray
         try {
-            # 嘗試釋放可能的檔案鎖定
+            # Attempt to release possible file locks
             [System.GC]::Collect()
             [System.GC]::WaitForPendingFinalizers()
             Start-Sleep -Milliseconds 500
 
-            # 多次嘗試刪除
+            # Multiple deletion attempts
             $attempts = 0
             $maxAttempts = 3
             $deleted = $false
@@ -187,37 +188,39 @@ try {
                 try {
                     Remove-Item $WorkingDirectory -Recurse -Force -ErrorAction Stop
                     $deleted = $true
-                    Write-Host "臨時檔案清理完成" -ForegroundColor Green
+                    Write-Host "Temporary file cleanup complete" -ForegroundColor Green
                 } catch {
                     $attempts++
                     if ($attempts -lt $maxAttempts) {
-                        Write-Host "  清理嘗試 $attempts 失敗，等待後重試..." -ForegroundColor Yellow
+                        Write-Host "  Cleanup attempt $attempts failed, waiting before retry..." -ForegroundColor Yellow
                         Start-Sleep -Seconds 1
                     }
                 }
             }
 
             if (-not $deleted) {
-                Write-Warning "無法完全清理臨時檔案：$WorkingDirectory"
-                Write-Warning "這通常是因為檔案被其他程序使用中，您可稍後手動刪除該目錄"
+                Write-Warning "Unable to completely clean temporary files: $WorkingDirectory"
+                Write-Warning "This is usually because files are in use by other processes. You can manually delete the directory later."
             }
         } catch {
-            Write-Warning "清理臨時檔案時發生錯誤：$($_.Exception.Message)"
-            Write-Warning "臨時目錄：$WorkingDirectory"
+            $cleanupError = $_.Exception.Message
+            Write-Warning "Error occurred while cleaning temporary files: $cleanupError"
+            Write-Warning "Temporary directory: $WorkingDirectory"
         }
     }
 } catch {
-    Write-Error "執行過程中發生錯誤：$($_.Exception.Message)"
+    $mainError = $_.Exception.Message
+    Write-Error "Error occurred during execution: $mainError"
 
-    # 發生錯誤時也要清理臨時檔案
+    # Clean temporary files even when error occurs
     if ($isTemporary -and -not $KeepTempFiles) {
-        Write-Host "正在清理臨時檔案..." -ForegroundColor Gray
+        Write-Host "Cleaning up temporary files..." -ForegroundColor Gray
         try {
             [System.GC]::Collect()
             Start-Sleep -Milliseconds 500
             Remove-Item $WorkingDirectory -Recurse -Force -ErrorAction SilentlyContinue
         } catch {
-            # 錯誤時不顯示警告，避免干擾主要錯誤訊息
+            # Don't show warnings on error to avoid interfering with main error message
         }
     }
     exit 1
@@ -225,12 +228,12 @@ try {
     Pop-Location
 }
 
-# 使用範例：
-# 基本用法（會自動使用臨時目錄並清理）
+# Usage Examples:
+# Basic usage (automatically uses temporary directory and cleans up)
 # .\sync-config.ps1 -TargetRepositories @("username/repo1", "username/repo2")
 #
-# 保留臨時檔案用於偵錯
+# Keep temporary files for debugging
 # .\sync-config.ps1 -TargetRepositories @("username/repo1") -KeepTempFiles
 #
-# 指定自訂工作目錄（不會自動清理）
+# Specify custom working directory (won't auto-clean)
 # .\sync-config.ps1 -TargetRepositories @("username/repo1") -WorkingDirectory "C:\temp"
