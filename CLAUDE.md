@@ -1,6 +1,11 @@
 # ConfigCommon
 
 ## Changelog
+- **2025-10-04**: Added DaemonEngine support and PascalCase naming convention
+  - Added DaemonEngine.gitignore and DaemonEngine.gitattributes templates
+  - Migrated to PascalCase naming (UnrealEngine.* instead of unreal-engine.*)
+  - Updated sync-config-common.yml to support multiple engine configurations
+  - Enhanced documentation with multi-engine usage examples
 - **2025-09-26**: Initial AI context initialization by Claude Code
   - Created comprehensive project documentation
   - Added .gitignore and .gitattributes files for ConfigCommon project
@@ -17,20 +22,24 @@ graph TD
     A["ConfigCommon (Root)"] --> B["Configuration Templates"];
     A --> C["Automation Scripts"];
     A --> D["Documentation"];
-    
-    B --> E["unreal-engine.gitignore"];
-    B --> F["unreal-engine.gitattributes"];
-    
-    C --> G["sync-config-common.yml"];
-    C --> H["CopyYML.ps1"];
-    
-    D --> I["README.md"];
-    D --> J["LICENSE"];
-    
-    click E "#unreal-engine-configuration" "Unreal Engine gitignore template"
-    click F "#unreal-engine-configuration" "Unreal Engine gitattributes template"
-    click G "#github-actions-workflow" "GitHub Actions sync workflow"
-    click H "#powershell-automation" "PowerShell sync script"
+
+    B --> E["UnrealEngine.gitignore"];
+    B --> F["UnrealEngine.gitattributes"];
+    B --> G["DaemonEngine.gitignore"];
+    B --> H["DaemonEngine.gitattributes"];
+
+    C --> I["sync-config-common.yml"];
+    C --> J["CopyYML.ps1"];
+
+    D --> K["README.md"];
+    D --> L["LICENSE"];
+
+    click E "#configuration-templates" "Unreal Engine gitignore template"
+    click F "#configuration-templates" "Unreal Engine gitattributes template"
+    click G "#configuration-templates" "Daemon Engine gitignore template"
+    click H "#configuration-templates" "Daemon Engine gitattributes template"
+    click I "#github-actions-workflow" "GitHub Actions sync workflow"
+    click J "#powershell-automation" "PowerShell sync script"
 ```
 
 ## Module Index
@@ -64,6 +73,11 @@ graph TD
   - Binary file handling with Git LFS
   - Engine-specific exclusions (Binaries, Intermediate, DerivedDataCache)
   - Asset management for large game development files
+- **Daemon Engine Templates**: Specialized .gitignore and .gitattributes for Daemon Engine (C++ game engine with V8 JavaScript)
+  - DirectX SDK and development tool exclusions
+  - Build artifacts and intermediate files handling
+  - Visual Studio 2022 specific configurations
+  - V8 JavaScript engine integration support
 
 ## Running and Development
 
@@ -82,8 +96,10 @@ graph TD
 ```
 
 ### Configuration File Sync Options
-- **.gitignore**: Sync gitignore files (default: enabled, source: unreal-engine.gitignore)
-- **.gitattributes**: Sync gitattributes files (default: enabled, source: unreal-engine.gitattributes)
+- **.gitignore**: Sync gitignore files (default: enabled, source: UnrealEngine.gitignore)
+  - Available templates: UnrealEngine.gitignore, DaemonEngine.gitignore
+- **.gitattributes**: Sync gitattributes files (default: enabled, source: UnrealEngine.gitattributes)
+  - Available templates: UnrealEngine.gitattributes, DaemonEngine.gitattributes
 - **.editorconfig**: Sync editor config files (default: enabled)
 - **.clang-format**: Sync clang-format files (default: disabled)
 - **Additional Files**: Custom file pairs in format `local_file:remote_file`
@@ -115,8 +131,10 @@ ConfigCommon/
 ├── LICENSE                        # Apache 2.0 license
 ├── sync-config-common.yml         # GitHub Actions workflow template
 ├── CopyYML.ps1                   # PowerShell deployment script
-├── unreal-engine.gitignore       # Unreal Engine gitignore template
-├── unreal-engine.gitattributes   # Unreal Engine gitattributes template
+├── UnrealEngine.gitignore         # Unreal Engine gitignore template
+├── UnrealEngine.gitattributes     # Unreal Engine gitattributes template
+├── DaemonEngine.gitignore         # Daemon Engine gitignore template
+├── DaemonEngine.gitattributes     # Daemon Engine gitattributes template
 └── .claude/
     ├── index.json                # AI context index
     └── CLAUDE.md                  # This documentation
@@ -124,9 +142,10 @@ ConfigCommon/
 
 ## Configuration Management
 - Configuration templates are stored at repository root level
-- Templates follow naming convention: `{platform/technology}.{filetype}`
-- Automation scripts support configurable source file selection
+- Templates follow PascalCase naming convention: `{Platform/Technology}.{filetype}` (e.g., UnrealEngine.gitignore, DaemonEngine.gitattributes)
+- Automation scripts support configurable source file selection through workflow inputs
 - Version control tracks all configuration changes with detailed commit messages
+- Users can easily switch between different engine configurations by modifying workflow input parameters
 
 ## Related Resources
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
