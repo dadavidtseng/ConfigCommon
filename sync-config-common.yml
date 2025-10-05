@@ -24,9 +24,9 @@ on:
         type: boolean
       # Source filename for .gitignore in the remote repository
       gitignore_source:
-        description: '.gitignore source file name'
+        description: '.gitignore source file name (e.g., UnrealEngine.gitignore, DaemonEngine.gitignore)'
         required: false
-        default: 'unreal-engine.gitignore'
+        default: 'DaemonEngine.gitignore'
         type: string
       # Option to sync .gitattributes file
       sync_gitattributes:
@@ -36,9 +36,9 @@ on:
         type: boolean
       # Source filename for .gitattributes in the remote repository
       gitattributes_source:
-        description: '.gitattributes source file name'
+        description: '.gitattributes source file name (e.g., UnrealEngine.gitattributes, DaemonEngine.gitattributes)'
         required: false
-        default: 'unreal-engine.gitattributes'
+        default: 'DaemonEngine.gitattributes'
         type: string
       # Option to sync .editorconfig file
       sync_editorconfig:
@@ -116,8 +116,8 @@ jobs:
           )
           
           declare -A SOURCE_CONFIG=(
-            ["gitignore"]="${{ github.event.inputs.gitignore_source || 'unreal-engine.gitignore' }}"
-            ["gitattributes"]="${{ github.event.inputs.gitattributes_source || 'unreal-engine.gitattributes' }}"
+            ["gitignore"]="${{ github.event.inputs.gitignore_source || 'UnrealEngine.gitignore' }}"
+            ["gitattributes"]="${{ github.event.inputs.gitattributes_source || 'UnrealEngine.gitattributes' }}"
             ["editorconfig"]="${{ github.event.inputs.editorconfig_source || '.editorconfig' }}"
             ["clangformat"]="${{ github.event.inputs.clangformat_source || '.clang-format' }}"
           )
