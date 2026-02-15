@@ -1,0 +1,26 @@
+#-----------------------------------------------------------------------------------------------------
+# notify-downstream.yml
+#-----------------------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------------------------------
+# GitHub Actions Workflow: Notify Downstream Repositories
+# Author: dadavidtseng
+# Purpose: Dispatch config-common-updated event to downstream repos on push
+#-----------------------------------------------------------------------------------------------------
+
+name: Notify downstream repos
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch to DaemonStarship
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_PAT }}
+          repository: dadavidtseng/DaemonStarship
+          event-type: config-common-updated
