@@ -24,3 +24,45 @@ jobs:
           token: ${{ secrets.DISPATCH_PAT }}
           repository: dadavidtseng/DaemonStarship
           event-type: config-common-updated
+
+      - name: Dispatch to DaemonLibra
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_PAT }}
+          repository: dadavidtseng/DaemonLibra
+          event-type: config-common-updated
+
+      - name: Dispatch to Daemonstein
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_PAT }}
+          repository: dadavidtseng/Daemonstein
+          event-type: config-common-updated
+
+      - name: Dispatch to DaemonCraft
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_PAT }}
+          repository: dadavidtseng/DaemonCraft
+          event-type: config-common-updated
+
+      - name: Dispatch to DaemonChess
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_PAT }}
+          repository: dadavidtseng/DaemonChess
+          event-type: config-common-updated
+
+      - name: Dispatch to DaemonWindows
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_PAT }}
+          repository: dadavidtseng/DaemonWindows
+          event-type: config-common-updated
+
+      - name: Dispatch to DaemonAgent
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_PAT }}
+          repository: dadavidtseng/DaemonAgent
+          event-type: config-common-updated
