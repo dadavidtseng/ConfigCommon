@@ -66,3 +66,17 @@ jobs:
           token: ${{ secrets.DISPATCH_PAT }}
           repository: dadavidtseng/DaemonAgent
           event-type: config-common-updated
+
+      - name: Dispatch to MathVisualTests
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_PAT }}
+          repository: dadavidtseng/MathVisualTests
+          event-type: config-common-updated
+          
+      - name: Dispatch to MathUnitTests
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DISPATCH_PAT }}
+          repository: dadavidtseng/MathUnitTests
+          event-type: config-common-updated
